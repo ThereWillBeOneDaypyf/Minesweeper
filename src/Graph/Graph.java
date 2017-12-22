@@ -4,7 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 public class Graph{
@@ -77,6 +81,7 @@ class MyFrame extends JFrame {
        hard.addActionListener(levelSettingListenner);
     }
     void initGrid(int r,int c){
+        removeAll();
         grid = new GridLayout(r,c);
         setLayout(grid);
         bomb = new Bomb [r][c];
@@ -114,6 +119,12 @@ class MyFrame extends JFrame {
             isExist.put(new Pair(r,c),1);
             bomb[r][c].isBomb = true;
         }
+    }
+    void clearScreen(){
+        removeAll();
+        setLayout(new BorderLayout());
+        getContentPane().add("Center",new Label("You Lose"));
+        validate();
     }
 }
 class LevelChangeListener implements ActionListener{
@@ -162,4 +173,80 @@ class LevelChangeListener implements ActionListener{
         }
     }
 }
+class BombCLick implements MouseListener{
+    Bomb curObj;
+    MyFrame workArea;
+    int [] xdir = {0,1,0,-1,1,1,-1,-1};
+    int [] ydir = {1,0,-1,0,1,-1,1,-1};
+    public void setArea(MyFrame workArea){
+        this.workArea = workArea;
+    }
+    public void solveRight(Bomb curObj){
 
+    }
+    boolean checkBomb(int x,int y){
+       if(workArea.bomb[x][y].isBomb == true)
+           return true;
+       for(int i = 0;i < 8; i++){
+           int tx = x + xdir[i];
+           int ty = y + ydir[i];
+           if(tx < 0 || ty < 0 || tx >= workArea.row || ty >= workArea.col) {
+               continue;
+           }
+           if(workArea.bomb[tx][ty].isBomb == true)
+               return true;
+        }
+        return false;
+    }
+    public void solveLeft(Bomb curObj){
+        if(curObj.isBomb == true){
+            workArea.clearScreen();
+        }
+        else{
+            LinkedList<Integer> q = new LinkedList<>();
+            q.add(curObj.x * workArea.row + curObj.y);
+            while(q.isEmpty() == false){
+                int temp = q.poll();
+                for(int i = 0;i < 4;i++){
+                    int tx = xdir[i] + temp / workArea.row;
+                    int ty = ydir[i] + temp % workArea.row;
+                    if(tx < 0 || ty < 0 || tx >= workArea.row || ty >= workArea.col || checkBomb(tx,ty) == true){
+                        workArea.bomb[temp / workArea.row][temp % workArea.row].disable();
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+    @Override
+    public void mouseClicked(MouseEvent mouseEvent) {
+       curObj = (Bomb) mouseEvent.getSource();
+       if(mouseEvent.getButton() == mouseEvent.BUTTON3){
+           solveRight(curObj);
+
+       }
+       else if(mouseEvent.getButton() == mouseEvent.BUTTON1){
+           solveRight(curObj);
+       }
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent mouseEvent) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent mouseEvent) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent mouseEvent) {
+
+    }
+}
