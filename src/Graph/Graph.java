@@ -40,6 +40,7 @@ class MyFrame extends JFrame {
     Random createBomb;
     GridLayout grid;
     Bomb [][] bomb;
+    boolean [][] vis;
     JMenuBar menuBar;
     JMenu GameMenu;
     JMenuItem newGame,restart;
@@ -81,14 +82,19 @@ class MyFrame extends JFrame {
        hard.addActionListener(levelSettingListenner);
     }
     void initGrid(int r,int c){
-        removeAll();
+        //removeAll();
+        BombCLick mouseListener = new BombCLick();
+        mouseListener.setArea(this);
         grid = new GridLayout(r,c);
         setLayout(grid);
         bomb = new Bomb [r][c];
+        vis = new boolean[r][c];
         for(int i = 0;i < r;i ++){
             for(int j = 0;j < c;j ++){
                 bomb[i][j] = new Bomb(i,j);
+                bomb[i][j].addMouseListener(mouseListener);
                 add(bomb[i][j]);
+                vis[i][j] = false;
             }
         }
         createGraph();
@@ -99,6 +105,11 @@ class MyFrame extends JFrame {
         int cnt = createBomb.nextInt();
         for(int i = 0;i < cnt;i++)
             createBomb.nextInt();
+    }
+    void deleteCurrent(){
+       for(int i = 0;i < row;i++)
+           for(int j = 0;j < col;j ++)
+               remove(bomb[i][j]);
     }
     int getRow(){
         return this.row;
@@ -121,10 +132,8 @@ class MyFrame extends JFrame {
         }
     }
     void clearScreen(){
-        removeAll();
-        setLayout(new BorderLayout());
-        getContentPane().add("Center",new Label("You Lose"));
-        validate();
+        deleteCurrent();
+        initGrid(row,col);
     }
 }
 class LevelChangeListener implements ActionListener{
@@ -142,29 +151,24 @@ class LevelChangeListener implements ActionListener{
         else
             return true;
     }
-    void deleteCurrent(){
-       for(int i = 0;i < area.row;i++)
-           for(int j = 0;j < area.col;j ++)
-               area.remove(area.bomb[i][j]);
-    }
     public void actionPerformed(ActionEvent e) {
         String target = e.getActionCommand();
         if(needChange(1) && "Primary".equals(target)){
-            deleteCurrent();
+            area.deleteCurrent();
             area.row = MyFrame.PRIMARY_ROW;
             area.col = MyFrame.PRIMARY_COL;
             area.bombCnt = MyFrame.PRIMARY_BOMB_CNT;
             area.initGrid(MyFrame.PRIMARY_ROW,MyFrame.PRIMARY_ROW);
         }
         else if(needChange(2) && "Medium".equals(target)){
-            deleteCurrent();
+            area.deleteCurrent();
             area.row = MyFrame.MEDIUM_ROW;
             area.col = MyFrame.MEDIUM_COL;
             area.bombCnt = MyFrame.MEDIU_BOMB_CNT;
             area.initGrid(MyFrame.MEDIUM_ROW,MyFrame.MEDIUM_COL);
         }
         else if(needChange(3) && "Hard".equals(target)){
-            deleteCurrent();
+            area.deleteCurrent();
             area.row = MyFrame.HARD_ROW;
             area.col = MyFrame.HARD_COL;
             area.bombCnt = MyFrame.HARD_BOMB_CNT;
@@ -184,9 +188,8 @@ class BombCLick implements MouseListener{
     public void solveRight(Bomb curObj){
 
     }
-    boolean checkBomb(int x,int y){
-       if(workArea.bomb[x][y].isBomb == true)
-           return true;
+    int checkBomb(int x,int y){
+       int cnt = 0;
        for(int i = 0;i < 8; i++){
            int tx = x + xdir[i];
            int ty = y + ydir[i];
@@ -194,12 +197,13 @@ class BombCLick implements MouseListener{
                continue;
            }
            if(workArea.bomb[tx][ty].isBomb == true)
-               return true;
+               cnt ++;
         }
-        return false;
+        return cnt;
     }
     public void solveLeft(Bomb curObj){
         if(curObj.isBomb == true){
+            JOptionPane.showMessageDialog(workArea,"You Lose");
             workArea.clearScreen();
         }
         else{
@@ -207,13 +211,21 @@ class BombCLick implements MouseListener{
             q.add(curObj.x * workArea.row + curObj.y);
             while(q.isEmpty() == false){
                 int temp = q.poll();
+                int bombRound = checkBomb(temp / workArea.row,temp % workArea.row);
+                System.out.println("x : " + temp / workArea.row + "y : " + temp % workArea.row);
+                if(bombRound != 0){
+                    workArea.bomb[temp / workArea.row][temp % workArea.row].setText(Integer.toString(bombRound));
+                    continue;
+                }
+                workArea.bomb[temp / workArea.row][temp % workArea.row].disable();
                 for(int i = 0;i < 4;i++){
                     int tx = xdir[i] + temp / workArea.row;
                     int ty = ydir[i] + temp % workArea.row;
-                    if(tx < 0 || ty < 0 || tx >= workArea.row || ty >= workArea.col || checkBomb(tx,ty) == true){
-                        workArea.bomb[temp / workArea.row][temp % workArea.row].disable();
+                    if(tx < 0 || ty < 0 || tx >= workArea.row || ty >= workArea.col || workArea.vis[tx][ty] == true){
                         continue;
                     }
+                    workArea.vis[tx][ty] = true;
+                    q.add(tx * workArea.row + ty);
                 }
             }
         }
@@ -226,7 +238,7 @@ class BombCLick implements MouseListener{
 
        }
        else if(mouseEvent.getButton() == mouseEvent.BUTTON1){
-           solveRight(curObj);
+           solveLeft(curObj);
        }
     }
 
