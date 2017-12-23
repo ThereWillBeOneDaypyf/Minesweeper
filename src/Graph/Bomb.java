@@ -15,6 +15,19 @@ public class Bomb extends JButton{
        isLeftClick = false;
        isRightClick = false;
     }
+    public void clearFlag(){
+        isLeftClick = false;
+        isRightClick = false;
+        setEnabled(true);
+        setText("");
+    }
+    public Bomb copyObj(Bomb o){
+        Bomb temp = new Bomb(o.x,o.y);
+        temp.isBomb = o.isBomb;
+        temp.isLeftClick = o.isLeftClick;
+        temp.isRightClick = o.isRightClick;
+        return temp;
+    }
     public void setBombRound(int cnt){
         bombRound = cnt;
     }
